@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Content Rewriter - Creator Tales{% endblock %}
+
+{% block content %}
+<div class="tool-container">
+    <div class="tool-header">
+        <h1><i class="fas fa-sync-alt"></i> Content Rewriter</h1>
+        <p>Transform any text into engaging LinkedIn content</p>
+    </div>
+
+    <div class="tool-layout">
+        <div class="tool-form-section">
+            <form method="POST" class="tool-form">
+                <div class="form-group">
+                    <label for="original_content">Original Content</label>
+                    <textarea id="original_content" name="original_content" rows="8" placeholder="Paste your content here... It could be a rough draft, notes, or even a boring paragraph that needs life!" required></textarea>
+                    <span class="form-hint">Paste any text you want to transform for LinkedIn</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="target_tone">Target Tone</label>
+                    <select id="target_tone" name="target_tone">
+                        <option value="professional">Professional & Polished</option>
+                        <option value="casual">Casual & Conversational</option>
+                        <option value="inspiring">Inspiring & Motivational</option>
+                        <option value="educational">Educational & Informative</option>
+                        <option value="storytelling">Storytelling & Engaging</option>
+                        <option value="confident">Confident & Bold</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-magic"></i> Rewrite Content
+                </button>
+            </form>
+        </div>
+
+        {% if result %}
+        <div class="tool-result-section">
+            <div class="result-header">
+                <h2>Rewritten Content</h2>
+                <div class="result-actions">
+                    <button class="btn btn-outline btn-sm" onclick="copyToClipboard('rewritten-content')">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="saveDraft()">
+                        <i class="fas fa-save"></i> Save Draft
+                    </button>
+                </div>
+            </div>
+
+            {% if result.error %}
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>{{ result.error }}</p>
+            </div>
+            {% else %}
+            <div class="result-card">
+                <div class="result-section">
+                    <h3><i class="fas fa-file-alt"></i> LinkedIn-Optimized Version</h3>
+                    <div class="content-box full-post-box" id="rewritten-content">{{ result.rewritten_content }}</div>
+                </div>
+
+                {% if result.improvements_made %}
+                <div class="result-section">
+                    <h3><i class="fas fa-check-circle"></i> Improvements Made</h3>
+                    <ul class="improvements-list">
+                        {% for improvement in result.improvements_made %}
+                        <li><i class="fas fa-check"></i> {{ improvement }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if result.engagement_tips %}
+                <div class="result-section">
+                    <h3><i class="fas fa-lightbulb"></i> Engagement Tips</h3>
+                    <ul class="tips-list">
+                        {% for tip in result.engagement_tips %}
+                        <li><i class="fas fa-star"></i> {{ tip }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    const text = element.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification('Copied to clipboard!', 'success');
+    });
+}
+
+function saveDraft() {
+    const content = document.getElementById('rewritten-content').innerText;
+    const title = 'Rewritten: ' + content.split('\n')[0].substring(0, 40) + '...';
+    
+    fetch('/save-draft', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: title,
+            content: content,
+            category: 'post'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Draft saved successfully!', 'success');
+        } else {
+            showNotification('Error saving draft', 'error');
+        }
+    });
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `<span>${message}</span>`;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Carousel Generator - Creator Tales{% endblock %}
+
+{% block content %}
+<div class="tool-container">
+    <div class="tool-header">
+        <h1><i class="fas fa-images"></i> Carousel Slide Generator</h1>
+        <p>Create structured 5-slide LinkedIn carousels that educate and engage</p>
+    </div>
+
+    <div class="tool-layout">
+        <div class="tool-form-section">
+            <form method="POST" class="tool-form">
+                <div class="form-group">
+                    <label for="topic">Carousel Topic</label>
+                    <input type="text" id="topic" name="topic" placeholder="e.g., 5 Productivity Hacks for Remote Workers" required>
+                    <span class="form-hint">What knowledge do you want to share?</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="niche">Your Niche/Industry</label>
+                    <input type="text" id="niche" name="niche" placeholder="e.g., Tech, Marketing, HR, Entrepreneurship">
+                    <span class="form-hint">Helps tailor the content to your audience</span>
+                </div>
+
+                <div class="carousel-structure-info">
+                    <h4>Carousel Structure:</h4>
+                    <ol>
+                        <li><strong>Hook</strong> - Grab attention</li>
+                        <li><strong>Problem</strong> - Address pain point</li>
+                        <li><strong>Insight</strong> - Share key learning</li>
+                        <li><strong>Solution</strong> - Provide the answer</li>
+                        <li><strong>CTA</strong> - Call to action</li>
+                    </ol>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-magic"></i> Generate Carousel
+                </button>
+            </form>
+        </div>
+
+        {% if result %}
+        <div class="tool-result-section">
+            <div class="result-header">
+                <h2>{{ result.title if result.title else 'Your Carousel' }}</h2>
+                <div class="result-actions">
+                    <button class="btn btn-primary btn-sm" onclick="saveDraft()">
+                        <i class="fas fa-save"></i> Save Draft
+                    </button>
+                </div>
+            </div>
+
+            {% if result.error %}
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>{{ result.error }}</p>
+            </div>
+            {% else %}
+            <div class="result-card">
+                {% if result.slides %}
+                <div class="carousel-preview">
+                    {% for slide in result.slides %}
+                    <div class="carousel-slide">
+                        <div class="slide-header">
+                            <span class="slide-number">{{ slide.slide_number }}</span>
+                            <span class="slide-type">{{ slide.type }}</span>
+                        </div>
+                        <h4 class="slide-headline">{{ slide.headline }}</h4>
+                        <p class="slide-content">{{ slide.content }}</p>
+                        {% if slide.design_tip %}
+                        <div class="slide-tip">
+                            <i class="fas fa-palette"></i> {{ slide.design_tip }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if result.caption %}
+                <div class="result-section">
+                    <h3><i class="fab fa-linkedin"></i> Suggested Caption</h3>
+                    <div class="content-box" id="carousel-caption">{{ result.caption }}</div>
+                    <button class="btn btn-outline btn-sm" onclick="copyToClipboard('carousel-caption')" style="margin-top: 10px;">
+                        <i class="fas fa-copy"></i> Copy Caption
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    const text = element.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification('Copied to clipboard!', 'success');
+    });
+}
+
+function saveDraft() {
+    const slides = document.querySelectorAll('.carousel-slide');
+    let content = '{{ result.title if result else "Carousel" }}\n\n';
+    slides.forEach((slide, index) => {
+        const headline = slide.querySelector('.slide-headline').innerText;
+        const slideContent = slide.querySelector('.slide-content').innerText;
+        content += `Slide ${index + 1}: ${headline}\n${slideContent}\n\n`;
+    });
+    
+    const caption = document.getElementById('carousel-caption');
+    if (caption) {
+        content += `\nCaption:\n${caption.innerText}`;
+    }
+    
+    fetch('/save-draft', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: '{{ result.title if result else "Carousel" }}',
+            content: content,
+            category: 'carousel'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Carousel saved to drafts!', 'success');
+        } else {
+            showNotification('Error saving draft', 'error');
+        }
+    });
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `<span>${message}</span>`;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
+{% endblock %}

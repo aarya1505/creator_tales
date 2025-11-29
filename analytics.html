@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Creator Tales{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+    <div class="analytics-header">
+        <h1><i class="fas fa-chart-line"></i> LinkedIn Analytics Insights</h1>
+        <p>Upload your LinkedIn analytics data and get AI-powered recommendations</p>
+    </div>
+
+    <div class="upload-section">
+        <form method="POST" enctype="multipart/form-data" class="upload-form">
+            <div class="upload-area" id="uploadArea">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h3>Upload LinkedIn Analytics</h3>
+                <p>Drag & drop your CSV or Excel file here, or click to browse</p>
+                <input type="file" id="analytics_file" name="analytics_file" accept=".csv,.xlsx,.xls" required>
+                <span class="file-types">Supported: CSV, Excel (.xlsx, .xls)</span>
+            </div>
+            <div class="upload-info">
+                <h4><i class="fas fa-info-circle"></i> How to get your LinkedIn Analytics:</h4>
+                <ol>
+                    <li>Go to your LinkedIn profile</li>
+                    <li>Click on "Analytics" or "Creator Mode Analytics"</li>
+                    <li>Export your post performance data</li>
+                    <li>Upload the downloaded file here</li>
+                </ol>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">
+                <i class="fas fa-chart-bar"></i> Analyze My Data
+            </button>
+        </form>
+    </div>
+
+    {% if analysis %}
+    <div class="analytics-results">
+        <h2><i class="fas fa-chart-pie"></i> Your Analytics Summary</h2>
+        
+        <div class="stats-overview">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+                <div class="stat-value">{{ analysis.total_posts }}</div>
+                <div class="stat-label">Total Posts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-eye"></i></div>
+                <div class="stat-value">{{ "{:,}".format(analysis.total_impressions) }}</div>
+                <div class="stat-label">Total Impressions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-heart"></i></div>
+                <div class="stat-value">{{ "{:,}".format(analysis.total_reactions) }}</div>
+                <div class="stat-label">Total Reactions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-percentage"></i></div>
+                <div class="stat-value">{{ analysis.engagement_rate }}%</div>
+                <div class="stat-label">Engagement Rate</div>
+            </div>
+        </div>
+
+        <div class="analytics-grid">
+            <div class="analytics-card">
+                <h3><i class="fas fa-chart-bar"></i> Average Performance</h3>
+                <ul class="metrics-list">
+                    <li>
+                        <span class="metric-name">Avg Impressions</span>
+                        <span class="metric-value">{{ "{:,.0f}".format(analysis.avg_impressions) }}</span>
+                    </li>
+                    <li>
+                        <span class="metric-name">Avg Reactions</span>
+                        <span class="metric-value">{{ "{:,.0f}".format(analysis.avg_reactions) }}</span>
+                    </li>
+                    <li>
+                        <span class="metric-name">Avg Comments</span>
+                        <span class="metric-value">{{ "{:,.0f}".format(analysis.avg_comments) }}</span>
+                    </li>
+                    <li>
+                        <span class="metric-name">Avg Shares</span>
+                        <span class="metric-value">{{ "{:,.0f}".format(analysis.avg_shares) }}</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="analytics-card">
+                <h3><i class="fas fa-trophy"></i> Best Performers</h3>
+                <ul class="metrics-list">
+                    <li>
+                        <span class="metric-name">Best Day</span>
+                        <span class="metric-value highlight">{{ analysis.best_day }}</span>
+                    </li>
+                    <li>
+                        <span class="metric-name">Best Content Type</span>
+                        <span class="metric-value highlight">{{ analysis.best_content_type }}</span>
+                    </li>
+                    <li>
+                        <span class="metric-name">Date Range</span>
+                        <span class="metric-value">{{ analysis.date_range }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        {% if analysis.top_posts %}
+        <div class="top-posts-section">
+            <h3><i class="fas fa-star"></i> Top 5 Performing Posts</h3>
+            <div class="top-posts-list">
+                {% for post in analysis.top_posts %}
+                <div class="top-post-item">
+                    <span class="post-rank">{{ loop.index }}</span>
+                    <div class="post-info">
+                        <h4>{{ post.title }}</h4>
+                        <div class="post-stats">
+                            <span><i class="fas fa-eye"></i> {{ "{:,}".format(post.impressions) }} impressions</span>
+                            <span><i class="fas fa-heart"></i> {{ "{:,}".format(post.reactions) }} reactions</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if charts %}
+        <div class="charts-section">
+            <h3><i class="fas fa-chart-area"></i> Visual Analytics</h3>
+            <div class="charts-grid">
+                {% for chart in charts %}
+                <div class="chart-card">
+                    <h4>{{ chart.name }}</h4>
+                    <img src="{{ url_for('static', filename=chart.path.replace('static/', '')) }}" alt="{{ chart.name }}">
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if recommendations %}
+    <div class="recommendations-section">
+        <h2><i class="fas fa-robot"></i> AI Recommendations</h2>
+        
+        {% if recommendations.error %}
+        <div class="error-message">
+            <i class="fas fa-exclamation-circle"></i>
+            <p>{{ recommendations.error }}</p>
+        </div>
+        {% else %}
+        
+        {% if recommendations.performance_summary %}
+        <div class="recommendation-card summary">
+            <h3><i class="fas fa-clipboard-check"></i> Performance Summary</h3>
+            <p>{{ recommendations.performance_summary }}</p>
+        </div>
+        {% endif %}
+
+        <div class="recommendations-grid">
+            {% if recommendations.strengths %}
+            <div class="recommendation-card strengths">
+                <h3><i class="fas fa-thumbs-up"></i> What's Working</h3>
+                <ul>
+                    {% for item in recommendations.strengths %}
+                    <li><i class="fas fa-check"></i> {{ item }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if recommendations.areas_for_improvement %}
+            <div class="recommendation-card improvements">
+                <h3><i class="fas fa-arrow-up"></i> Areas to Improve</h3>
+                <ul>
+                    {% for item in recommendations.areas_for_improvement %}
+                    <li><i class="fas fa-arrow-right"></i> {{ item }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if recommendations.reach_recommendations %}
+            <div class="recommendation-card reach">
+                <h3><i class="fas fa-bullseye"></i> How to Increase Reach</h3>
+                <ul>
+                    {% for item in recommendations.reach_recommendations %}
+                    <li><i class="fas fa-rocket"></i> {{ item }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if recommendations.timing_recommendations %}
+            <div class="recommendation-card timing">
+                <h3><i class="fas fa-clock"></i> Posting Timing</h3>
+                <ul>
+                    {% for item in recommendations.timing_recommendations %}
+                    <li><i class="fas fa-calendar-check"></i> {{ item }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if recommendations.content_recommendations %}
+            <div class="recommendation-card content">
+                <h3><i class="fas fa-lightbulb"></i> Content Recommendations</h3>
+                <ul>
+                    {% for item in recommendations.content_recommendations %}
+                    <li><i class="fas fa-star"></i> {{ item }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if recommendations.what_to_avoid %}
+            <div class="recommendation-card avoid">
+                <h3><i class="fas fa-exclamation-triangle"></i> What to Avoid</h3>
+                <ul>
+                    {% for item in recommendations.what_to_avoid %}
+                    <li><i class="fas fa-times"></i> {{ item }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if recommendations.hook_suggestions %}
+        <div class="recommendation-card hooks">
+            <h3><i class="fas fa-bolt"></i> Hook Templates for You</h3>
+            <div class="hooks-list">
+                {% for hook in recommendations.hook_suggestions %}
+                <div class="hook-item">
+                    <p>{{ hook }}</p>
+                    <button class="btn btn-sm btn-outline" onclick="copyText('{{ hook }}')">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if recommendations.next_7_post_ideas %}
+        <div class="recommendation-card post-ideas">
+            <h3><i class="fas fa-calendar-week"></i> Your Next 7 Post Ideas</h3>
+            <div class="post-ideas-list">
+                {% for idea in recommendations.next_7_post_ideas %}
+                <div class="idea-item">
+                    <span class="day-badge">Day {{ idea.day }}</span>
+                    <div class="idea-content">
+                        <h4>{{ idea.topic }}</h4>
+                        <span class="idea-type">{{ idea.type }}</span>
+                        {% if idea.hook %}
+                        <p class="idea-hook"><strong>Hook:</strong> {{ idea.hook }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if recommendations.growth_forecast %}
+        <div class="recommendation-card forecast">
+            <h3><i class="fas fa-chart-line"></i> Growth Forecast</h3>
+            <p>{{ recommendations.growth_forecast }}</p>
+        </div>
+        {% endif %}
+
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('analytics_file');
+
+uploadArea.addEventListener('click', () => fileInput.click());
+
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    fileInput.files = e.dataTransfer.files;
+    updateFileName();
+});
+
+fileInput.addEventListener('change', updateFileName);
+
+function updateFileName() {
+    if (fileInput.files.length > 0) {
+        uploadArea.querySelector('p').textContent = `Selected: ${fileInput.files[0].name}`;
+    }
+}
+
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification('Copied to clipboard!', 'success');
+    });
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `<span>${message}</span>`;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Creator Tales{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('index') }}" class="nav-logo">
+                <i class="fas fa-feather-alt"></i>
+                <span>Creator Tales</span>
+            </a>
+            
+            {% if current_user.is_authenticated %}
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li class="nav-dropdown">
+                    <a href="#" class="nav-link dropdown-toggle"><i class="fas fa-magic"></i> AI Tools <i class="fas fa-chevron-down"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{{ url_for('post_generator') }}"><i class="fas fa-pen"></i> Post Generator</a></li>
+                        <li><a href="{{ url_for('content_rewriter') }}"><i class="fas fa-sync-alt"></i> Content Rewriter</a></li>
+                        <li><a href="{{ url_for('carousel_generator') }}"><i class="fas fa-images"></i> Carousel Generator</a></li>
+                        <li><a href="{{ url_for('profile_optimizer') }}"><i class="fas fa-user-edit"></i> Profile Optimizer</a></li>
+                        <li><a href="{{ url_for('message_generator') }}"><i class="fas fa-envelope"></i> Message Generator</a></li>
+                        <li><a href="{{ url_for('calendar_generator') }}"><i class="fas fa-calendar-alt"></i> Content Calendar</a></li>
+                    </ul>
+                </li>
+                <li><a href="{{ url_for('drafts') }}" class="nav-link {% if request.endpoint == 'drafts' %}active{% endif %}"><i class="fas fa-folder"></i> Drafts</a></li>
+                <li><a href="{{ url_for('analytics') }}" class="nav-link {% if request.endpoint == 'analytics' %}active{% endif %}"><i class="fas fa-chart-line"></i> Analytics</a></li>
+                <li class="nav-user">
+                    <span class="user-name"><i class="fas fa-user-circle"></i> {{ current_user.name }}</span>
+                    <a href="{{ url_for('logout') }}" class="nav-link logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                </li>
+            </ul>
+            {% else %}
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('login') }}" class="nav-link">Login</a></li>
+                <li><a href="{{ url_for('signup') }}" class="nav-link btn-primary">Get Started</a></li>
+            </ul>
+            {% endif %}
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">
+                            <span>{{ message }}</span>
+                            <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024 Creator Tales. Build your LinkedIn presence with AI.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

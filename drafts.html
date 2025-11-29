@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}My Drafts - Creator Tales{% endblock %}
+
+{% block content %}
+<div class="drafts-container">
+    <div class="drafts-header">
+        <h1><i class="fas fa-folder"></i> My Drafts</h1>
+        <p>All your saved content in one place</p>
+    </div>
+
+    <div class="drafts-filters">
+        <a href="{{ url_for('drafts') }}" class="filter-btn {% if current_category == 'all' %}active{% endif %}">
+            <i class="fas fa-th-large"></i> All
+        </a>
+        <a href="{{ url_for('drafts', category='post') }}" class="filter-btn {% if current_category == 'post' %}active{% endif %}">
+            <i class="fas fa-pen"></i> Posts
+        </a>
+        <a href="{{ url_for('drafts', category='carousel') }}" class="filter-btn {% if current_category == 'carousel' %}active{% endif %}">
+            <i class="fas fa-images"></i> Carousels
+        </a>
+        <a href="{{ url_for('drafts', category='profile') }}" class="filter-btn {% if current_category == 'profile' %}active{% endif %}">
+            <i class="fas fa-user"></i> Profile
+        </a>
+        <a href="{{ url_for('drafts', category='message') }}" class="filter-btn {% if current_category == 'message' %}active{% endif %}">
+            <i class="fas fa-envelope"></i> Messages
+        </a>
+        <a href="{{ url_for('drafts', category='idea') }}" class="filter-btn {% if current_category == 'idea' %}active{% endif %}">
+            <i class="fas fa-lightbulb"></i> Ideas
+        </a>
+    </div>
+
+    {% if drafts %}
+    <div class="drafts-grid">
+        {% for draft in drafts %}
+        <div class="draft-card" data-draft-id="{{ draft.id }}">
+            <div class="draft-card-header">
+                <span class="category-badge {{ draft.category }}">{{ draft.category }}</span>
+                <div class="draft-actions">
+                    <a href="{{ url_for('edit_draft', draft_id=draft.id) }}" class="action-btn edit-btn" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <button class="action-btn delete-btn" onclick="deleteDraft('{{ draft.id  }}')" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <h3 class="draft-title">{{ draft.title }}</h3>
+            <p class="draft-preview">{{ draft.content[:150] }}{% if draft.content|length > 150 %}...{% endif %}</p>
+            <div class="draft-meta">
+                <span class="draft-date"><i class="fas fa-clock"></i> {{ draft.updated_at.strftime('%b %d, %Y') }}</span>
+            </div>
+            <button class="btn btn-outline btn-sm copy-btn" onclick="copyDraftContent('{{ draft.content | e }}')">
+                <i class="fas fa-copy"></i> Copy
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-folder-open"></i>
+        <h3>No Drafts Yet</h3>
+        <p>Start creating content and save your drafts here!</p>
+        <div class="empty-actions">
+            <a href="{{ url_for('post_generator') }}" class="btn btn-primary">Generate a Post</a>
+            <a href="{{ url_for('carousel_generator') }}" class="btn btn-outline">Create Carousel</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function deleteDraft(draftId) {
+    if (confirm('Are you sure you want to delete this draft?')) {
+        fetch(`/delete-draft/${draftId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelector(`[data-draft-id="${draftId}"]`).remove();
+                showNotification('Draft deleted successfully!', 'success');
+            } else {
+                showNotification('Error deleting draft', 'error');
+            }
+        });
+    }
+}
+
+function copyDraftContent(content) {
+    const decodedContent = content.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    navigator.clipboard.writeText(decodedContent).then(() => {
+        showNotification('Copied to clipboard!', 'success');
+    });
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `<span>${message}</span>`;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Content Calendar - Creator Tales{% endblock %}
+
+{% block content %}
+<div class="tool-container">
+    <div class="tool-header">
+        <h1><i class="fas fa-calendar-alt"></i> Content Calendar Generator</h1>
+        <p>Plan your LinkedIn content strategy with AI-powered calendars</p>
+    </div>
+
+    <div class="tool-layout">
+        <div class="tool-form-section">
+            <form method="POST" class="tool-form">
+                <div class="form-group">
+                    <label for="niche">Your Niche/Industry</label>
+                    <input type="text" id="niche" name="niche" placeholder="e.g., Tech, Marketing, Career Coaching, Finance" required>
+                    <span class="form-hint">This helps tailor topics to your audience</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="duration">Calendar Duration</label>
+                    <select id="duration" name="duration">
+                        <option value="weekly">1 Week (5 posts)</option>
+                        <option value="monthly">1 Month (20 posts)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="goals">Content Goals (Optional)</label>
+                    <textarea id="goals" name="goals" rows="3" placeholder="e.g., Build thought leadership, Attract clients, Grow network, Get job opportunities"></textarea>
+                    <span class="form-hint">What do you want to achieve with your content?</span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-magic"></i> Generate Calendar
+                </button>
+            </form>
+        </div>
+
+        {% if result %}
+        <div class="tool-result-section full-width">
+            <div class="result-header">
+                <h2>{{ result.calendar_title if result.calendar_title else 'Your Content Calendar' }}</h2>
+                <div class="result-actions">
+                    <button class="btn btn-primary btn-sm" onclick="saveCalendar()">
+                        <i class="fas fa-save"></i> Save Calendar
+                    </button>
+                </div>
+            </div>
+
+            {% if result.error %}
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>{{ result.error }}</p>
+            </div>
+            {% else %}
+            <div class="calendar-result">
+                {% if result.strategy_overview %}
+                <div class="strategy-overview">
+                    <h3><i class="fas fa-chess"></i> Strategy Overview</h3>
+                    <p>{{ result.strategy_overview }}</p>
+                </div>
+                {% endif %}
+
+                {% if result.content_pillars %}
+                <div class="content-pillars">
+                    <h3><i class="fas fa-columns"></i> Content Pillars</h3>
+                    <div class="pillars-grid">
+                        {% for pillar in result.content_pillars %}
+                        <span class="pillar-tag">{{ pillar }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if result.weeks %}
+                <div class="calendar-weeks">
+                    {% for week in result.weeks %}
+                    <div class="week-section">
+                        <h3>Week {{ week.week_number }}{% if week.theme %}: {{ week.theme }}{% endif %}</h3>
+                        <div class="days-grid">
+                            {% for day in week.days %}
+                            <div class="day-card">
+                                <div class="day-header">
+                                    <span class="day-name">{{ day.day }}</span>
+                                    <span class="post-type-badge">{{ day.post_type }}</span>
+                                </div>
+                                <h4>{{ day.topic }}</h4>
+                                {% if day.hook_idea %}
+                                <p class="hook-preview"><strong>Hook:</strong> {{ day.hook_idea }}</p>
+                                {% endif %}
+                                <div class="day-meta">
+                                    {% if day.best_time %}
+                                    <span><i class="fas fa-clock"></i> {{ day.best_time }}</span>
+                                    {% endif %}
+                                </div>
+                                {% if day.hashtags %}
+                                <div class="hashtags">
+                                    {% for tag in day.hashtags[:3] %}
+                                    <span class="hashtag">#{{ tag }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                {% if day.engagement_tip %}
+                                <p class="engagement-tip"><i class="fas fa-lightbulb"></i> {{ day.engagement_tip }}</p>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if result.monthly_goals %}
+                <div class="monthly-goals">
+                    <h3><i class="fas fa-target"></i> Goals to Track</h3>
+                    <ul>
+                        {% for goal in result.monthly_goals %}
+                        <li><i class="fas fa-check-square"></i> {{ goal }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if result.pro_tips %}
+                <div class="pro-tips">
+                    <h3><i class="fas fa-star"></i> Pro Tips</h3>
+                    <ul>
+                        {% for tip in result.pro_tips %}
+                        <li><i class="fas fa-lightbulb"></i> {{ tip }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function saveCalendar() {
+    const title = '{{ result.calendar_title if result else "Content Calendar" }}';
+    const niche = document.getElementById('niche').value;
+    const duration = document.getElementById('duration').value;
+    const content = document.querySelector('.calendar-result').innerHTML;
+    
+    fetch('/save-calendar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: title,
+            niche: niche,
+            duration: duration,
+            content: content
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Calendar saved successfully!', 'success');
+        } else {
+            showNotification('Error saving calendar', 'error');
+        }
+    });
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `<span>${message}</span>`;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
+{% endblock %}

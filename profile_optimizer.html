@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Profile Optimizer - Creator Tales{% endblock %}
+
+{% block content %}
+<div class="tool-container">
+    <div class="tool-header">
+        <h1><i class="fas fa-user-edit"></i> Profile Optimization Assistant</h1>
+        <p>Transform your LinkedIn profile with AI-powered suggestions</p>
+    </div>
+
+    <div class="tool-layout wide">
+        <div class="tool-form-section">
+            <form method="POST" class="tool-form">
+                <div class="form-group">
+                    <label for="headline">Current Headline</label>
+                    <input type="text" id="headline" name="headline" placeholder="e.g., Software Engineer at Google | AI Enthusiast">
+                    <span class="form-hint">Your current LinkedIn headline (120 characters max)</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="about">About Section</label>
+                    <textarea id="about" name="about" rows="6" placeholder="Paste your current About section here..."></textarea>
+                    <span class="form-hint">Your LinkedIn summary (2600 characters max)</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="experience">Experience Description</label>
+                    <textarea id="experience" name="experience" rows="6" placeholder="Paste your experience bullet points or description..."></textarea>
+                    <span class="form-hint">We'll optimize using the STAR method</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="skills">Current Skills</label>
+                    <textarea id="skills" name="skills" rows="3" placeholder="List your skills separated by commas..."></textarea>
+                    <span class="form-hint">We'll suggest additional relevant skills</span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-magic"></i> Optimize Profile
+                </button>
+            </form>
+        </div>
+
+        {% if result %}
+        <div class="tool-result-section full-width">
+            <div class="result-header">
+                <h2>Your Optimized Profile</h2>
+            </div>
+
+            {% if result.error %}
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>{{ result.error }}</p>
+            </div>
+            {% else %}
+            <div class="profile-results-grid">
+                {% if result.headline_variations %}
+                <div class="result-card">
+                    <div class="result-section">
+                        <h3><i class="fas fa-heading"></i> Headline Variations</h3>
+                        <div class="headline-options">
+                            {% for headline in result.headline_variations %}
+                            <div class="headline-option">
+                                <p>{{ headline }}</p>
+                                <button class="btn btn-sm btn-outline" onclick="copyText('{{ headline }}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if result.optimized_about %}
+                <div class="result-card">
+                    <div class="result-section">
+                        <h3><i class="fas fa-user"></i> Optimized About Section</h3>
+                        <div class="content-box" id="optimized-about">{{ result.optimized_about }}</div>
+                        <button class="btn btn-outline btn-sm" onclick="copyToClipboard('optimized-about')" style="margin-top: 10px;">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="saveProfileDraft('about')" style="margin-top: 10px;">
+                            <i class="fas fa-save"></i> Save
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if result.optimized_experience %}
+                <div class="result-card">
+                    <div class="result-section">
+                        <h3><i class="fas fa-briefcase"></i> Optimized Experience (STAR Method)</h3>
+                        <div class="content-box" id="optimized-experience">{{ result.optimized_experience }}</div>
+                        <button class="btn btn-outline btn-sm" onclick="copyToClipboard('optimized-experience')" style="margin-top: 10px;">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="saveProfileDraft('experience')" style="margin-top: 10px;">
+                            <i class="fas fa-save"></i> Save
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if result.skills_suggestions %}
+                <div class="result-card">
+                    <div class="result-section">
+                        <h3><i class="fas fa-tools"></i> Suggested Skills</h3>
+                        <div class="skills-grid">
+                            {% for skill in result.skills_suggestions %}
+                            <span class="skill-tag">{{ skill }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if result.keyword_suggestions %}
+                <div class="result-card">
+                    <div class="result-section">
+                        <h3><i class="fas fa-search"></i> SEO Keywords to Include</h3>
+                        <div class="keywords-list">
+                            {% for keyword in result.keyword_suggestions %}
+                            <span class="keyword-tag">{{ keyword }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if result.profile_tips %}
+                <div class="result-card">
+                    <div class="result-section">
+                        <h3><i class="fas fa-lightbulb"></i> Additional Tips</h3>
+                        <ul class="tips-list">
+                            {% for tip in result.profile_tips %}
+                            <li><i class="fas fa-check-circle"></i> {{ tip }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    const text = element.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification('Copied to clipboard!', 'success');
+    });
+}
+
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification('Copied to clipboard!', 'success');
+    });
+}
+
+function saveProfileDraft(type) {
+    let content, title;
+    if (type === 'about') {
+        content = document.getElementById('optimized-about').innerText;
+        title = 'Profile: Optimized About Section';
+    } else {
+        content = document.getElementById('optimized-experience').innerText;
+        title = 'Profile: Optimized Experience';
+    }
+    
+    fetch('/save-draft', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: title,
+            content: content,
+            category: 'profile'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Saved to drafts!', 'success');
+        } else {
+            showNotification('Error saving draft', 'error');
+        }
+    });
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `<span>${message}</span>`;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
+{% endblock %}

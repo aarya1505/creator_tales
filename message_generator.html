@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Message Generator - Creator Tales{% endblock %}
+
+{% block content %}
+<div class="tool-container">
+    <div class="tool-header">
+        <h1><i class="fas fa-envelope"></i> Networking Message Generator</h1>
+        <p>Create personalized outreach messages that get responses</p>
+    </div>
+
+    <div class="tool-layout">
+        <div class="tool-form-section">
+            <form method="POST" class="tool-form">
+                <div class="form-group">
+                    <label for="message_type">Message Type</label>
+                    <select id="message_type" name="message_type">
+                        <option value="recruiter_outreach">Recruiter Outreach</option>
+                        <option value="referral_request">Referral Request</option>
+                        <option value="alumni_networking">Alumni Networking</option>
+                        <option value="thank_you">Thank You (Post-Interview)</option>
+                        <option value="follow_up">Follow Up Message</option>
+                        <option value="client_pitch">Client Pitch</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="tone">Tone</label>
+                    <select id="tone" name="tone">
+                        <option value="professional">Professional</option>
+                        <option value="friendly">Friendly</option>
+                        <option value="confident">Confident</option>
+                        <option value="concise">Concise & Direct</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="recipient_info">Recipient Information (Optional)</label>
+                    <input type="text" id="recipient_info" name="recipient_info" placeholder="e.g., Sarah, Senior Recruiter at Google, hiring for ML roles">
+                    <span class="form-hint">Add details to personalize the message</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="context">Context/Goal</label>
+                    <textarea id="context" name="context" rows="4" placeholder="e.g., I'm a data scientist with 5 years experience looking to transition into product management..."></textarea>
+                    <span class="form-hint">What do you want to achieve with this message?</span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-magic"></i> Generate Message
+                </button>
+            </form>
+        </div>
+
+        {% if result %}
+        <div class="tool-result-section">
+            <div class="result-header">
+                <h2>Your Messages</h2>
+            </div>
+
+            {% if result.error %}
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>{{ result.error }}</p>
+            </div>
+            {% else %}
+            <div class="result-card">
+                {% if result.subject_line %}
+                <div class="result-section">
+                    <h3><i class="fas fa-envelope-open"></i> Subject Line (for InMail)</h3>
+                    <div class="content-box subject-box">{{ result.subject_line }}</div>
+                </div>
+                {% endif %}
+
+                <div class="result-section">
+                    <h3><i class="fas fa-comment"></i> Full Message</h3>
+                    <div class="content-box" id="full-message">{{ result.message }}</div>
+                    <div class="result-actions" style="margin-top: 10px;">
+                        <button class="btn btn-outline btn-sm" onclick="copyToClipboard('full-message')">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="saveDraft('message')">
+                            <i class="fas fa-save"></i> Save
+                        </button>
+                    </div>
+                </div>
+
+                {% if result.connection_note %}
+                <div class="result-section">
+                    <h3><i class="fas fa-user-plus"></i> Connection Request Note (300 chars)</h3>
+                    <div class="content-box connection-note" id="connection-note">{{ result.connection_note }}</div>
+                    <div class="char-count">{{ result.connection_note|length }}/300 characters</div>
+                    <button class="btn btn-outline btn-sm" onclick="copyToClipboard('connection-note')" style="margin-top: 10px;">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+                {% endif %}
+
+                {% if result.follow_up_message %}
+                <div class="result-section">
+                    <h3><i class="fas fa-redo"></i> Follow-Up Message</h3>
+                    <div class="content-box" id="follow-up">{{ result.follow_up_message }}</div>
+                    <button class="btn btn-outline btn-sm" onclick="copyToClipboard('follow-up')" style="margin-top: 10px;">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+                {% endif %}
+
+                {% if result.personalization_tips %}
+                <div class="result-section">
+                    <h3><i class="fas fa-lightbulb"></i> Personalization Tips</h3>
+                    <ul class="tips-list">
+                        {% for tip in result.personalization_tips %}
+                        <li><i class="fas fa-star"></i> {{ tip }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if result.what_not_to_do %}
+                <div class="result-section">
+                    <h3><i class="fas fa-exclamation-triangle"></i> What to Avoid</h3>
+                    <ul class="avoid-list">
+                        {% for item in result.what_not_to_do %}
+                        <li><i class="fas fa-times-circle"></i> {{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    const text = element.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification('Copied to clipboard!', 'success');
+    });
+}
+
+function saveDraft(type) {
+    const content = document.getElementById('full-message').innerText;
+    const messageType = document.getElementById('message_type').options[document.getElementById('message_type').selectedIndex].text;
+    
+    fetch('/save-draft', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: messageType + ' Message',
+            content: content,
+            category: 'message'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Message saved to drafts!', 'success');
+        } else {
+            showNotification('Error saving draft', 'error');
+        }
+    });
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `<span>${message}</span>`;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
+{% endblock %}

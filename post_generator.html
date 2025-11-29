@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Post Generator - Creator Tales{% endblock %}
+
+{% block content %}
+<div class="tool-container">
+    <div class="tool-header">
+        <h1><i class="fas fa-pen"></i> LinkedIn Post Generator</h1>
+        <p>Create engaging, viral-worthy LinkedIn posts with AI</p>
+    </div>
+
+    <div class="tool-layout">
+        <div class="tool-form-section">
+            <form method="POST" class="tool-form">
+                <div class="form-group">
+                    <label for="topic">Topic or Idea</label>
+                    <input type="text" id="topic" name="topic" placeholder="e.g., How I grew my network by 10x in 6 months" required>
+                    <span class="form-hint">What do you want to write about?</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="niche">Your Niche/Industry</label>
+                    <input type="text" id="niche" name="niche" placeholder="e.g., Tech, Marketing, Finance, Career Coaching">
+                    <span class="form-hint">This helps tailor the content to your audience</span>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tone">Tone</label>
+                        <select id="tone" name="tone">
+                            <option value="professional">Professional</option>
+                            <option value="casual">Casual & Friendly</option>
+                            <option value="inspiring">Inspiring</option>
+                            <option value="educational">Educational</option>
+                            <option value="storytelling">Storytelling</option>
+                            <option value="controversial">Bold & Controversial</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="length">Length</label>
+                        <select id="length" name="length">
+                            <option value="short">Short (50-100 words)</option>
+                            <option value="medium" selected>Medium (150-250 words)</option>
+                            <option value="long">Long (300-500 words)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="include_carousel" name="include_carousel">
+                        <span class="checkmark"></span>
+                        Also generate a carousel outline
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-magic"></i> Generate Post
+                </button>
+            </form>
+        </div>
+
+        {% if result %}
+        <div class="tool-result-section">
+            <div class="result-header">
+                <h2>Your Generated Post</h2>
+                <div class="result-actions">
+                    <button class="btn btn-outline btn-sm" onclick="copyToClipboard('full-post')">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="saveDraft()">
+                        <i class="fas fa-save"></i> Save Draft
+                    </button>
+                </div>
+            </div>
+
+            {% if result.error %}
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>{{ result.error }}</p>
+            </div>
+            {% else %}
+            <div class="result-card">
+                <div class="result-section">
+                    <h3><i class="fas fa-bolt"></i> Hook</h3>
+                    <div class="content-box hook-box">{{ result.hook }}</div>
+                </div>
+
+                <div class="result-section">
+                    <h3><i class="fas fa-align-left"></i> Body</h3>
+                    <div class="content-box">{{ result.body }}</div>
+                </div>
+
+                <div class="result-section">
+                    <h3><i class="fas fa-bullhorn"></i> Call-to-Action</h3>
+                    <div class="content-box cta-box">{{ result.cta }}</div>
+                </div>
+
+                <div class="result-section">
+                    <h3><i class="fab fa-linkedin"></i> Full Post</h3>
+                    <div class="content-box full-post-box" id="full-post">{{ result.full_post }}</div>
+                </div>
+
+                {% if result.carousel %}
+                <div class="result-section">
+                    <h3><i class="fas fa-images"></i> Carousel Outline</h3>
+                    <div class="carousel-slides">
+                        {% for slide in result.carousel %}
+                        <div class="slide-item">
+                            <span class="slide-number">{{ loop.index }}</span>
+                            <p>{{ slide }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    const text = element.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification('Copied to clipboard!', 'success');
+    });
+}
+
+function saveDraft() {
+    const content = document.getElementById('full-post').innerText;
+    const title = content.split('\n')[0].substring(0, 50) + '...';
+    
+    fetch('/save-draft', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: title,
+            content: content,
+            category: 'post'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Draft saved successfully!', 'success');
+        } else {
+            showNotification('Error saving draft', 'error');
+        }
+    });
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `<span>${message}</span>`;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
+{% endblock %}
